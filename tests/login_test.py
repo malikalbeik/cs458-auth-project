@@ -111,6 +111,27 @@ class TestLogin(BasicTest):
             "https://accounts.google.com/v3/signin"
         )
         
+    def test_failed_login_with_incorrect_credentials(self):
+        self.driver.get(WEBSITE_URL)
+        email_input = WebDriverWait(self.driver, 2).until(
+            EC.presence_of_element_located((By.NAME, "email"))
+        )
+        email_input.send_keys("wrong_user@gmail.com")
+        self.driver.find_element(By.NAME, "password").send_keys("wrong_password")
+
+        button_xpath = "//button[contains(text(), 'Sign in with Credentials')]"
+        self.driver.find_element(By.XPATH, button_xpath).click()
+
+        error_message_xpath = "//p[contains(text(), 'Sign in failed. Check the details you provided are correct.')]"
+        error_message_element = WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, error_message_xpath))
+        )
+
+        if error_message_element:
+            assert True, "Test Case #2 Passed: Invalid Login Detected"
+        else:
+            assert False, "Test Case #2 Failed"
+            
     def test_successful_login(self):
         self.driver.get(WEBSITE_URL)
         email_input = WebDriverWait(self.driver, 2).until(
@@ -130,24 +151,3 @@ class TestLogin(BasicTest):
             assert True, "Login Successful: Success message detected."
         except:
             assert False, "Login Failed: Success message not detected."
-
-    def test_failed_login_with_incorrect_credentials(self):
-        self.driver.get("https://cs458-auth-project.vercel.app/api/auth/signin")
-        email_input = WebDriverWait(self.driver, 2).until(
-            EC.presence_of_element_located((By.NAME, "email"))
-        )
-        email_input.send_keys("wrong_user@gmail.com")
-        self.driver.find_element(By.NAME, "password").send_keys("wrong_password")
-
-        button_xpath = "//button[contains(text(), 'Sign in with Credentials')]"
-        self.driver.find_element(By.XPATH, button_xpath).click()
-
-        error_message_xpath = "//p[contains(text(), 'Sign in failed. Check the details you provided are correct.')]"
-        error_message_element = WebDriverWait(self.driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, error_message_xpath))
-        )
-
-        if error_message_element:
-            assert True, "Test Case #2 Passed: Invalid Login Detected"
-        else:
-            assert False, "Test Case #2 Failed"
