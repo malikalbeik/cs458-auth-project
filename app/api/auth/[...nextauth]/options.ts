@@ -24,14 +24,15 @@ export const options: NextAuthOptions = {
             name: "Credentials",
             credentials: {
                 email: { label: "email:", type: "email", placeholder: "example@email.com" },
+                phone_number: { label: "phoen number:", type: "text", placeholder: "05555555555" },
                 password: { label: "Password:", type: "password" },
             },
             async authorize(credentials) {
                 const user = {
-                    id: 1, email: "test_user@gmail.com", password: "test_password"
+                    id: 1, email: "test_user@gmail.com", phone_number: "05555555556", password: "test_password"
                 }
 
-                if (credentials?.email === user.email && credentials?.password === user.password) {
+                if ((credentials?.email === user.email || credentials?.phone_number === user.phone_number) && credentials?.password === user.password) {
                     return user as any
                 } else {
                     return null
