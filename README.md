@@ -1,8 +1,14 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
+For testing purposes, install pytest module with pip and navigate to tests/login_test.py
 
-First, run the development server:
+```bash
+pip install pytest
+```
+type 'pytest' into the terminal to run the test cases.
+
+To run the web application locally, run the development server:
 
 ```bash
 npm run dev
