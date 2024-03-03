@@ -24,7 +24,7 @@ export const options: NextAuthOptions = {
             name: "Credentials",
             credentials: {
                 email: { label: "email:", type: "email", placeholder: "example@email.com" },
-                phone_number: { label: "phoen number:", type: "text", placeholder: "05555555555" },
+                phone_number: { label: "phone number:", type: "text", placeholder: "05555555555" },
                 password: { label: "Password:", type: "password" },
             },
             async authorize(credentials) {
