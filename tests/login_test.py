@@ -128,9 +128,36 @@ class TestLogin(BasicTest):
         )
 
         if error_message_element:
-            assert True, "Test Case #2 Passed: Invalid Login Detected"
+            assert True, "Test Case Passed: Invalid Login Detected"
         else:
-            assert False, "Test Case #2 Failed"
+            assert False, "Test Case Failed"
+            
+    def test_login_with_invalid_phone_number(self):
+        self.driver.get(WEBSITE_URL)
+        WebDriverWait(self.driver, 2).until(
+            EC.presence_of_element_located(
+                (By.NAME, "phone_number")
+            )
+        )
+        self.driver.find_element(
+            By.NAME, "phone_number"
+        ).send_keys("05555555558") 
+
+        self.driver.find_element(By.NAME, "password").send_keys("test_password")
+        
+        self.driver.find_element(
+            By.XPATH, "//button[contains(text(), 'Sign in with Credentials')]"
+        ).click()
+
+        error_message_xpath = "//p[contains(text(), 'Sign in failed. Check the details you provided are correct.')]"
+        error_message_element = WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, error_message_xpath))
+        )
+
+        if error_message_element:
+            assert True, "Test Case Passed: Invalid Login Detected"
+        else:
+            assert False, "Test Case Failed"
             
     def test_successful_login(self):
         self.driver.get(WEBSITE_URL)
