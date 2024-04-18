@@ -10,7 +10,7 @@ export default function Home() {
       {session?.user ? (
         <div>
           <h1>Welcome, you are now signed in</h1>
-          <p>Click <a href="https://example.com">here</a> to visit our deployed website.</p>
+          <p>Click <a href="https://github.com/ilkerozgen/cs458-project-3">here</a> to visit our deployed website.</p>
         </div>
       ) : (
         <h1>Loading...</h1>
