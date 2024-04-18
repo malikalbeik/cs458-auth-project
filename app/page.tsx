@@ -10,7 +10,7 @@ export default function Home() {
       {session?.user ? (
         <div>
           <h1>Welcome, you are now signed in</h1>
-          <p>Click <a href="https://ilkerozgen.github.io/cs458-project-3/">here</a> to go to Distance Calculator.</p>
+          <p>Click <a href="https://ilkerozgen.github.io/cs458-project-3/" style={{ color: 'blue', textDecoration: 'underline' }}>here</a> to go to Distance Calculator.</p>
         </div>
       ) : (
         <h1>Loading...</h1>
