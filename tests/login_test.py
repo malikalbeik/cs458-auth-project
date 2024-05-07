@@ -1,9 +1,12 @@
 import pytest
+import requests
+import ephem
+from geopy.distance import geodesic
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+from selenium.common.exceptions import TimeoutException
 
 WEBSITE_URL = "https://cs458-auth-project.vercel.app"
 
@@ -170,7 +173,7 @@ class TestLogin(BasicTest):
         button_xpath = "//button[contains(text(), 'Sign in with Credentials')]"
         self.driver.find_element(By.XPATH, button_xpath).click()
 
-        success_message_xpath = "//h1[contains(text(), 'Welcome you are now signed in')]"
+        success_message_xpath = "//h1[contains(text(), 'Welcome, you are now signed in')]"
         try:
             WebDriverWait(self.driver, 10).until(
                 EC.visibility_of_element_located((By.XPATH, success_message_xpath))
@@ -178,3 +181,164 @@ class TestLogin(BasicTest):
             assert True, "Login Successful: Success message detected."
         except:
             assert False, "Login Failed: Success message not detected."
+    
+    def test_successful_display_location_service(self):
+        self.driver.get("https://ilkerozgen.github.io/cs458-project-3/")
+
+        # Click 'Get Location' button
+        get_location_button_xpath = "//button[contains(text(), 'Get Location')]"
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, get_location_button_xpath))
+        ).click()
+            
+        try:
+            WebDriverWait(self.driver, 5).until(EC.alert_is_present())
+            alert = self.driver.switch_to.alert
+            alert.accept()
+            print("Location access permission granted.")
+        except TimeoutException:
+            print("No location access permission pop-up appeared.")
+
+        # Verify distance to the nearest sea is displayed
+        distance_message_xpath = "//p[contains(text(), 'Distance to nearest sea')]" 
+        try:
+            WebDriverWait(self.driver, 10).until(
+                EC.visibility_of_element_located((By.XPATH, distance_message_xpath))
+            )
+            assert True, "Distance message displayed."
+        except:
+            assert False, "Distance message not displayed."
+        
+    def test_display_correct_distance_calculation_with_range_verification(self):
+        self.driver.get("https://ilkerozgen.github.io/cs458-project-3/")
+
+        # Fetch actual geolocation data
+        response = requests.get('https://ipinfo.io/json?token=1a0cc121a33379')
+        data = response.json()
+        latitude, longitude = map(float, data['loc'].split(','))
+        print(f"Actual Location: Latitude: {latitude}, Longitude: {longitude}")
+
+        # Click 'Get Location' button
+        get_location_button_xpath = "//button[contains(text(), 'Get Location')]"
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, get_location_button_xpath))
+        ).click()
+
+        # Handle location permission alert, if it appears
+        try:
+            WebDriverWait(self.driver, 5).until(EC.alert_is_present())
+            alert = self.driver.switch_to.alert
+            alert.accept()
+            print("Location access permission granted.")
+        except TimeoutException:
+            print("No location access permission pop-up appeared, or permission previously granted.")
+            
+        
+        seas = [
+            { "name": "Black Sea", "latitude": 41.2, "longitude": 29.1 },
+            { "name": "Marmara Sea", "latitude": 40.8, "longitude": 28.9 },
+            { "name": "Caspian Sea", "latitude": 40.3, "longitude": 50.3 },
+            { "name": "Mediterranean Sea", "latitude": 35.0, "longitude": 18.0 },
+            { "name": "Red Sea", "latitude": 20.0, "longitude": 38.0 },
+            { "name": "Adriatic Sea", "latitude": 42.5, "longitude": 17.5 },
+            { "name": "Aegean Sea", "latitude": 37.5, "longitude": 25.0 },
+            { "name": "Baltic Sea", "latitude": 55.0, "longitude": 20.0 },
+            { "name": "North Sea", "latitude": 57.0, "longitude": 3.0 },
+            { "name": "Arabian Sea", "latitude": 10.0, "longitude": 65.0 },
+            { "name": "Andaman Sea", "latitude": 12.0, "longitude": 97.0 },
+            { "name": "South China Sea", "latitude": 12.0, "longitude": 115.0 },
+            { "name": "East China Sea", "latitude": 30.0, "longitude": 123.0 },
+            { "name": "Philippine Sea", "latitude": 15.0, "longitude": 130.0 },
+            { "name": "Coral Sea", "latitude": -18.0, "longitude": 150.0 },
+            { "name": "Tasman Sea", "latitude": -40.0, "longitude": 160.0 },
+            { "name": "Bering Sea", "latitude": 58.0, "longitude": -175.0 },
+	    ]
+
+        # Find the closest sea
+        closest_sea = None
+        min_distance = float('inf')
+        for sea in seas:
+            sea_distance = geodesic((latitude, longitude), (sea['latitude'], sea['longitude'])).kilometers
+            if sea_distance < min_distance:
+                min_distance = sea_distance
+                closest_sea = sea
+
+        expected_distance = min_distance  # Distance to the closest sea
+        
+        # Extract the displayed distance from the web page
+        distance_message_xpath = "//p[contains(text(), 'Distance to nearest sea')]"
+        distance_message = WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, distance_message_xpath))
+        )
+        displayed_distance = float(distance_message.text.split(":")[1].strip().split(" ")[0])
+
+        # Compare the expected distance with the displayed distance
+        print(f"Expected Distance to {closest_sea['name']}: {expected_distance} km")
+        print(f"Displayed Distance: {displayed_distance} km")
+
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, get_location_button_xpath))
+        ).click()
+        
+        # Assert if they are within an acceptable range
+        assert abs(expected_distance - displayed_distance) < 300, "The distance displayed is not accurate within 300 km tolerance."
+        
+    def test_display_correct_sun_distance_calculation(self):
+        self.driver.get("https://ilkerozgen.github.io/cs458-project-3/")
+
+        # Click 'Get Location' button to calculate the distance to the nearest sea first
+        get_location_button_xpath = "//button[contains(text(), 'Get Location')]"
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, get_location_button_xpath))
+        ).click()
+
+        # Handle location permission alert, if it appears
+        try:
+            WebDriverWait(self.driver, 5).until(EC.alert_is_present())
+            alert = self.driver.switch_to.alert
+            alert.accept()
+            print("Location access permission granted for sea distance.")
+        except TimeoutException:
+            print("No location access permission pop-up appeared, or permission previously granted for sea.")
+
+        # Wait for the sea distance calculation to complete and display
+        sea_distance_message_xpath = "//p[contains(text(), 'Distance to nearest sea')]"
+        WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, sea_distance_message_xpath))
+        )
+
+        # Click the 'Next' button to switch to sun distance calculations
+        next_button_xpath = "//button[@id='nextBtn']"
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, next_button_xpath))
+        ).click()
+
+        # Fetch actual geolocation data
+        response = requests.get('https://ipinfo.io/json?token=1a0cc121a33379')
+        data = response.json()
+        latitude, longitude = map(float, data['loc'].split(','))
+        print(f"Actual Location: Latitude: {latitude}, Longitude: {longitude}")
+        
+        # Use ephem to calculate the distance to the sun
+        observer = ephem.Observer()
+        observer.lat = str(latitude)
+        observer.lon = str(longitude)
+        observer.date = ephem.now()
+        sun = ephem.Sun()
+        sun.compute(observer)
+        expected_sun_distance = sun.earth_distance * 149597870.7  # Convert AU to km
+        
+        # Extract the displayed distance to the sun from the web page
+        sun_distance_message_xpath = "//p[@id='currentLocationSunDistance']"
+        sun_distance_message = WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, sun_distance_message_xpath))
+        )
+        displayed_sun_distance = float(sun_distance_message.text.split(":")[1].strip().split(" ")[0])
+
+        print(f"Expected Distance to Sun's core: {expected_sun_distance} km")
+        print(f"Displayed Distance: {displayed_sun_distance} km")
+
+        # Assert if they are within an acceptable range
+        assert abs(expected_sun_distance - displayed_sun_distance) < 150000, "The distance to the Sun's core displayed is not accurate within 1 percent error rate."
+        
+        
